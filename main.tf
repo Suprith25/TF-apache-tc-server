@@ -1,5 +1,6 @@
 provider "aws" {
   region = var.region
+  profile = "jenkins-infra"
 }
 
 module "vpc" {
