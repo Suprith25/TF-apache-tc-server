@@ -59,3 +59,15 @@ module "cicd" {
   codedeploy_tag_value = var.project_name # matches the CodeDeployGroup tag on the instances
   app_url              = "http://${module.alb.alb_dns_name}"
 }
+
+module "monitoring" {
+  source = "./modules/monitoring"
+
+  name                    = var.project_name
+  region                  = var.region
+  instance_ids            = module.tomcat.instance_ids
+  alb_arn_suffix          = module.alb.alb_arn_suffix
+  target_group_arn_suffix = module.alb.target_group_arn_suffix
+  alert_email             = var.alert_email
+  cpu_threshold           = var.cpu_alarm_threshold
+}

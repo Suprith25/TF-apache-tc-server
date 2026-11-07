@@ -24,3 +24,9 @@ Everything runs on AWS. A `git push` to the repo's `main` branch triggers the pi
 4. Versions: WAR = `app_major_minor` + build number (e.g. 1.0.7), stored in CodeArtifact as `sample-1.0.7.war`.
 
 Free-tier notes: CodeBuild gives 100 build-min/month (a run takes roughly 6-10 min), 1 CodePipeline V1 pipeline, CodeDeploy on EC2 and CodeArtifact (2 GB) are free. The ALB, public IPv4 addresses and running 3 instances 24/7 are NOT fully free: `terraform destroy` after class.
+
+## Monitoring (branch `cloudwatch0-dashboard`)
+
+CloudWatch dashboard `tomcat-demo-servers` (CPU, network, disk, status checks per server + ALB health/requests/5xx/latency) and one CPU alarm per server (> 90% for 2 x 5 min) that emails via SNS.
+
+`terraform apply` (alerts go to the `alert_email` variable, default `bjsuprith@gmail.com`), then click **Confirm subscription** in the email AWS sends. Dashboard link: `dashboard_url` output.
