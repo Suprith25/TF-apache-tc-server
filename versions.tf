@@ -11,7 +11,8 @@ terraform {
   # Remote state in S3 with native locking (no DynamoDB table needed).
   # Replace the bucket name with the one you created in ./bootstrap
   backend "s3" {
-    bucket       = "REPLACE-ME-tf-state-bucket"
+    bucket       = "tfprojecttcbucket"
+    profile = "jenkins-infra"
     key          = "tomcat-demo/terraform.tfstate"
     region       = "ap-south-1"
     encrypt      = true
