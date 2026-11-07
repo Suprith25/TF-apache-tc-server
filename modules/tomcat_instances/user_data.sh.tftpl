@@ -4,7 +4,15 @@ set -euxo pipefail
 dnf install -y java-21-amazon-corretto-headless tar gzip ruby wget
 
 useradd -r -m -d /opt/tomcat -s /sbin/nologin tomcat || true
-curl -fsSL "https://archive.apache.org/dist/tomcat/tomcat-10/v${tomcat_version}/bin/apache-tomcat-${tomcat_version}.tar.gz" -o /tmp/tomcat.tgz
+# Download Tomcat: Maven Central first (reliable from AWS), Apache archive as fallback. Retries on failure.
+MAVEN_URL="https://repo1.maven.org/maven2/org/apache/tomcat/tomcat/${tomcat_version}/tomcat-${tomcat_version}.tar.gz"
+APACHE_URL="https://archive.apache.org/dist/tomcat/tomcat-10/v${tomcat_version}/bin/apache-tomcat-${tomcat_version}.tar.gz"
+CURL="curl -fsSL --connect-timeout 20 --max-time 300 --retry 5 --retry-delay 5 --retry-all-errors"
+$CURL "$MAVEN_URL" -o /tmp/tomcat.tgz || $CURL "$APACHE_URL" -o /tmp/tomcat.tgz
+# verify the download when the Maven Central checksum is available
+if $CURL "$MAVEN_URL.sha512" -o /tmp/tomcat.sha512 2>/dev/null; then
+  echo "$(cat /tmp/tomcat.sha512)  /tmp/tomcat.tgz" | sha512sum -c -
+fi
 tar -xzf /tmp/tomcat.tgz -C /opt/tomcat --strip-components=1
 
 # Simple page showing which server answered (handy for teaching)
