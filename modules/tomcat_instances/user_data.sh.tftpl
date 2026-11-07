@@ -1,0 +1,35 @@
+#!/bin/bash
+set -euxo pipefail
+
+dnf install -y java-17-amazon-corretto-headless tar gzip
+
+useradd -r -m -d /opt/tomcat -s /sbin/nologin tomcat || true
+curl -fsSL "https://archive.apache.org/dist/tomcat/tomcat-10/v${tomcat_version}/bin/apache-tomcat-${tomcat_version}.tar.gz" -o /tmp/tomcat.tgz
+tar -xzf /tmp/tomcat.tgz -C /opt/tomcat --strip-components=1
+
+# Simple page showing which server answered (handy for teaching)
+echo "<h1>Tomcat is running on ${server_name}</h1>" > /opt/tomcat/webapps/ROOT/hello.html
+chown -R tomcat:tomcat /opt/tomcat
+
+cat > /etc/systemd/system/tomcat.service <<'UNIT'
+[Unit]
+Description=Apache Tomcat
+After=network.target
+
+[Service]
+Type=forking
+User=tomcat
+Group=tomcat
+Environment=JAVA_HOME=/usr/lib/jvm/jre-17
+Environment=CATALINA_HOME=/opt/tomcat
+Environment=CATALINA_PID=/opt/tomcat/temp/tomcat.pid
+ExecStart=/opt/tomcat/bin/startup.sh
+ExecStop=/opt/tomcat/bin/shutdown.sh
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
+UNIT
+
+systemctl daemon-reload
+systemctl enable --now tomcat
