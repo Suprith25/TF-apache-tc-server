@@ -28,3 +28,12 @@ output "pipeline_name" {
 output "app_url" {
   value = "http://${module.alb.alb_dns_name}/${var.war_name}/"
 }
+
+output "dashboard_url" {
+  description = "CloudWatch dashboard for the 3 servers"
+  value       = module.monitoring.dashboard_url
+}
+
+output "cpu_alarms" {
+  value = module.monitoring.alarm_names
+}

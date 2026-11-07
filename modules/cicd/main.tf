@@ -315,8 +315,11 @@ data "aws_iam_policy_document" "pipeline" {
     resources = [data.aws_s3_bucket.artifacts.arn]
   }
   statement {
-    actions   = ["codestar-connections:UseConnection"]
-    resources = [aws_codestarconnections_connection.github.arn]
+    actions = ["codestar-connections:UseConnection", "codeconnections:UseConnection"]
+    resources = [
+      aws_codestarconnections_connection.github.arn,
+      replace(aws_codestarconnections_connection.github.arn, "codestar-connections", "codeconnections"),
+    ]
   }
   statement {
     actions   = ["codebuild:StartBuild", "codebuild:BatchGetBuilds"]
