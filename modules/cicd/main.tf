@@ -138,9 +138,10 @@ resource "aws_iam_role_policy" "codebuild" {
 # ---------------- CodeBuild projects: scan / build / test ----------------
 locals {
   projects = {
-    scan  = "buildspecs/scan.yml"
-    build = "buildspecs/build.yml"
-    test  = "buildspecs/test.yml"
+    scan    = "buildspecs/scan.yml"
+    build   = "buildspecs/build.yml"
+    publish = "buildspecs/publish.yml"
+    test    = "buildspecs/test.yml"
   }
 }
 
@@ -396,6 +397,21 @@ resource "aws_codepipeline" "this" {
       output_artifacts = ["build_output"]
       configuration = {
         ProjectName = aws_codebuild_project.this["build"].name
+      }
+    }
+  }
+
+  stage {
+    name = "Publish"
+    action {
+      name            = "Upload-WAR-to-CodeArtifact"
+      category        = "Build"
+      owner           = "AWS"
+      provider        = "CodeBuild"
+      version         = "1"
+      input_artifacts = ["build_output"]
+      configuration = {
+        ProjectName = aws_codebuild_project.this["publish"].name
       }
     }
   }

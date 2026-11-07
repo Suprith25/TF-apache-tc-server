@@ -14,7 +14,7 @@ Notes: `t3.micro` is free tier on newer accounts; use `-var instance_type=t2.mic
 
 ## CI/CD with AWS CodePipeline (branch `code-pipeline`)
 
-Source (GitHub: `Suprith25/Java-mini-project`) -> CodeScan (Semgrep SAST + Trivy deps/secrets) -> Build (Maven, auto-version, WAR to CodeArtifact) -> Deploy (CodeDeploy to 3 Tomcats, ALB-aware) -> Test (smoke test via ALB checks the new version).
+Source (GitHub: `Suprith25/Java-mini-project`) -> CodeScan (Semgrep SAST + Trivy deps/secrets) -> Build (Maven test + package, auto-version) -> Publish (versioned WAR to CodeArtifact) -> Deploy (CodeDeploy to all 3 Tomcats in parallel) -> Test (smoke test via ALB checks the new version).
 
 Everything runs on AWS. A `git push` to the repo's `main` branch triggers the pipeline automatically. Nothing is built locally.
 

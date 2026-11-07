@@ -43,8 +43,6 @@ phases:
       - mvn -B -s settings.xml -f "$APP_DIR/pom.xml" clean verify
   post_build:
     commands:
-      # publish the versioned WAR (<artifactId>-<VERSION>.war) to CodeArtifact
-      - mvn -B -s settings.xml -f "$APP_DIR/pom.xml" deploy -DskipTests -DaltDeploymentRepository=codeartifact::${CA_URL}
       # assemble the CodeDeploy bundle: WAR + appspec + hook scripts (kept in the infra repo)
       - mkdir -p dist
       - cp "$APP_DIR/target/$WAR_NAME.war" dist/
