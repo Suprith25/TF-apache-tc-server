@@ -1,3 +1,5 @@
+# 🚀 modules/cicd/outputs.tf - connection ARN (to authorize), pipeline name, CodeArtifact repository
+
 output "connection_arn" {
   value = aws_codestarconnections_connection.github.arn
 }

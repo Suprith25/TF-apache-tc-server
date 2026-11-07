@@ -1,4 +1,7 @@
 #!/bin/bash
+# validate.sh - runs LAST: waits (up to about 90 s) until the app answers on this server.
+# If it never does, the deployment is marked failed and rolled back.
+
 # Tomcat auto-deploys the WAR; wait until the app answers.
 for i in $(seq 1 30); do
   if curl -sf http://localhost:8080/${war_name}/version.txt; then exit 0; fi

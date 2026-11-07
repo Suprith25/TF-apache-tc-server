@@ -1,3 +1,5 @@
 #!/bin/bash
+# after_install.sh - runs AFTER the WAR is copied: give the tomcat user ownership so Tomcat can read and unpack it.
+
 set -e
 chown tomcat:tomcat /opt/tomcat/webapps/${war_name}.war

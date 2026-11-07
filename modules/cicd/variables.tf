@@ -1,3 +1,5 @@
+# 🚀 modules/cicd/variables.tf - inputs: names, GitHub repo/branch, version prefix, app folder and WAR name, scan strictness (trivy_*)
+
 variable "name" { type = string }
 variable "region" { type = string }
 variable "account_id" { type = string }
@@ -23,10 +25,12 @@ variable "app_url" {
   type        = string
   description = "Public base URL (ALB) used by the test stage"
 }
+# Trivy only reports vulnerabilities of this severity or worse. CRITICAL keeps the demo from failing too often.
 variable "trivy_severity" {
   type    = string
   default = "CRITICAL"
 }
+# "1" = fail the pipeline when something is found. Use "0" for report-only mode.
 variable "trivy_exit_code" {
   type    = string
   default = "1"

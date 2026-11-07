@@ -1,3 +1,5 @@
+# 🐱 modules/tomcat_instances/outputs.tf - public IPs, direct URLs (port 8080) and instance ids
+
 output "public_ips" {
   value = aws_instance.tomcat[*].public_ip
 }

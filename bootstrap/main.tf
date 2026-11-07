@@ -1,3 +1,10 @@
+# 🪣 bootstrap/main.tf - one-time setup of the S3 bucket that stores Terraform state
+#
+# CHICKEN-AND-EGG: the main project keeps its state in S3, but S3 must exist first.
+# So this tiny separate project creates the bucket using LOCAL state.
+# Run it once:  cd bootstrap && terraform init && terraform apply -var bucket_name=<unique-name>
+# S3 bucket names are global across all AWS accounts, so pick a unique one.
+
 # Run this ONCE (local state) to create the S3 bucket that holds the main project's state.
 terraform {
   required_version = ">= 1.10.0"
@@ -24,6 +31,7 @@ resource "aws_s3_bucket" "state" {
   bucket = var.bucket_name
 }
 
+# Versioning keeps old copies of the state file, so a bad apply can be rolled back.
 resource "aws_s3_bucket_versioning" "state" {
   bucket = aws_s3_bucket.state.id
   versioning_configuration {
@@ -31,6 +39,7 @@ resource "aws_s3_bucket_versioning" "state" {
   }
 }
 
+# Encrypt everything in the bucket at rest (AES-256).
 resource "aws_s3_bucket_server_side_encryption_configuration" "state" {
   bucket = aws_s3_bucket.state.id
   rule {
@@ -40,6 +49,7 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "state" {
   }
 }
 
+# Hard safety switch: this bucket can never be made public by mistake.
 resource "aws_s3_bucket_public_access_block" "state" {
   bucket                  = aws_s3_bucket.state.id
   block_public_acls       = true

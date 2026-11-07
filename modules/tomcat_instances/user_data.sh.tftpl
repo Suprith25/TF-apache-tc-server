@@ -1,16 +1,26 @@
 #!/bin/bash
+# user_data.sh.tftpl - first-boot script. Terraform fills in the placeholders
+# (tomcat version, server name, region) before sending it to the instance.
+# It runs once as root. "set -e" stops at the first error, so a failure here
+# means Tomcat is not installed and the ALB will answer 502 (see README troubleshooting).
+
 set -euxo pipefail
 
+# 1) Install Java 21 (needed by Tomcat and by the Java 21 app) and tools. Ruby is needed by the CodeDeploy agent.
 dnf install -y java-21-amazon-corretto-headless tar gzip ruby wget
 
+# 2) Create a dedicated, non-login "tomcat" user so Tomcat does not run as root.
 useradd -r -m -d /opt/tomcat -s /sbin/nologin tomcat || true
+# 3) Download and unpack Tomcat. NOTE: archive.apache.org can time out from AWS (see README).
 curl -fsSL "https://archive.apache.org/dist/tomcat/tomcat-10/v${tomcat_version}/bin/apache-tomcat-${tomcat_version}.tar.gz" -o /tmp/tomcat.tgz
 tar -xzf /tmp/tomcat.tgz -C /opt/tomcat --strip-components=1
 
 # Simple page showing which server answered (handy for teaching)
+# 4) A tiny page proving which server answered; the ALB health check also requests it.
 echo "<h1>Tomcat is running on ${server_name}</h1>" > /opt/tomcat/webapps/ROOT/hello.html
 chown -R tomcat:tomcat /opt/tomcat
 
+# 5) systemd service: starts Tomcat at boot and restarts it if it crashes.
 cat > /etc/systemd/system/tomcat.service <<'UNIT'
 [Unit]
 Description=Apache Tomcat
@@ -31,9 +41,11 @@ Restart=on-failure
 WantedBy=multi-user.target
 UNIT
 
+# 6) Load the new service file and start Tomcat now and on every boot.
 systemctl daemon-reload
 systemctl enable --now tomcat
 
+# 7) The CodeDeploy agent is the small program that receives deployments from AWS.
 # CodeDeploy agent (lets CodePipeline deploy WARs to this server)
 cd /tmp
 wget -q "https://aws-codedeploy-${region}.s3.${region}.amazonaws.com/latest/install"

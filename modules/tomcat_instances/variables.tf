@@ -1,3 +1,5 @@
+# 🐱 modules/tomcat_instances/variables.tf - inputs: network ids, how many servers, instance type, Tomcat version, artifact bucket
+
 variable "name" { type = string }
 variable "vpc_id" { type = string }
 variable "subnet_ids" { type = list(string) }

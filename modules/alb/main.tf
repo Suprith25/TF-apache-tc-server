@@ -1,3 +1,11 @@
+# ⚖️ modules/alb/main.tf - Application Load Balancer (ALB)
+#
+#    Browser --HTTP:80--> ALB --HTTP:8080--> Tomcat server 1 / 2 / 3
+#
+# The ALB gives ONE stable URL, spreads requests across the servers (round robin) and
+# stops sending traffic to a server whose health check fails.
+
+# Security group = virtual firewall. This one lets anyone on the internet reach the ALB on port 80.
 resource "aws_security_group" "alb" {
   name_prefix = "${var.name}-alb-"
   description = "Allow HTTP from the internet to the ALB"
@@ -25,6 +33,7 @@ resource "aws_security_group" "alb" {
   }
 }
 
+# The load balancer. It must span at least 2 subnets in different AZs.
 resource "aws_lb" "this" {
   name               = "${var.name}-alb"
   load_balancer_type = "application"
@@ -32,6 +41,9 @@ resource "aws_lb" "this" {
   subnets            = var.subnet_ids # needs >= 2 AZs
 }
 
+# Target group = the pool of servers the ALB forwards to (port 8080 = Tomcat).
+# Health check: every 15s the ALB requests /hello.html. 2 passes = healthy, 3 fails = unhealthy.
+# An unhealthy server gets no traffic. If ALL are unhealthy the ALB answers 502.
 resource "aws_lb_target_group" "tomcat" {
   name     = "${var.name}-tg"
   port     = 8080
@@ -47,6 +59,7 @@ resource "aws_lb_target_group" "tomcat" {
   }
 }
 
+# Register each EC2 instance in the target group.
 resource "aws_lb_target_group_attachment" "tomcat" {
   count            = length(var.instance_ids)
   target_group_arn = aws_lb_target_group.tomcat.arn
@@ -54,6 +67,7 @@ resource "aws_lb_target_group_attachment" "tomcat" {
   port             = 8080
 }
 
+# Listener = "what to do with traffic arriving on port 80": forward it to the target group.
 resource "aws_lb_listener" "http" {
   load_balancer_arn = aws_lb.this.arn
   port              = 80
