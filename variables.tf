@@ -79,3 +79,14 @@ variable "artifact_bucket_name" {
   default     = "tfprojecttcbucket" # same bucket that holds the Terraform state
   description = "Existing S3 bucket used for CodePipeline artifacts and deploy files"
 }
+
+variable "alert_email" {
+  type        = string
+  default     = "bjsuprith@gmail.com"
+  description = "Email that receives CloudWatch alarm notifications (AWS sends a confirmation link)"
+}
+
+variable "cpu_alarm_threshold" {
+  type    = number
+  default = 90
+}
