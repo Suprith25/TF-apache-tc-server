@@ -1,0 +1,18 @@
+version: 0.2
+phases:
+  build:
+    commands:
+      - echo "Smoke test against $APP_URL/$WAR_NAME expecting version $EXPECTED_VERSION"
+      - |
+        for i in $(seq 1 30); do
+          BODY=$(curl -s --max-time 5 "$APP_URL/$WAR_NAME/version.txt" || true)
+          echo "attempt $i: $BODY"
+          if echo "$BODY" | grep -q "^$EXPECTED_VERSION\$"; then
+            echo "version check passed: $EXPECTED_VERSION"
+            break
+          fi
+          if [ "$i" = "30" ]; then echo "TEST FAILED: version $EXPECTED_VERSION not served" >&2; exit 1; fi
+          sleep 10
+        done
+      - curl -sf "$APP_URL/$WAR_NAME/hello" | grep -q "Hello" && echo "servlet /hello OK"
+      - curl -sf "$APP_URL/$WAR_NAME/" | grep -q "Welcome" && echo "home page OK"

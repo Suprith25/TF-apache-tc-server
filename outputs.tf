@@ -15,3 +15,16 @@ output "alb_url" {
   description = "Load-balanced URL (refresh to see /hello.html rotate between servers)"
   value       = "http://${module.alb.alb_dns_name}/hello.html"
 }
+
+output "github_connection_arn" {
+  description = "Authorize this connection once in Console > Developer Tools > Connections"
+  value       = module.cicd.connection_arn
+}
+
+output "pipeline_name" {
+  value = module.cicd.pipeline_name
+}
+
+output "app_url" {
+  value = "http://${module.alb.alb_dns_name}/${var.war_name}/"
+}
