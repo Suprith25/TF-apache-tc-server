@@ -9,3 +9,7 @@ output "urls" {
 output "instance_ids" {
   value = aws_instance.tomcat[*].id
 }
+
+output "instance_role_name" {
+  value = aws_iam_role.instance.name
+}

@@ -37,3 +37,8 @@ output "dashboard_url" {
 output "cpu_alarms" {
   value = module.monitoring.alarm_names
 }
+
+output "tomcat_log_groups" {
+  description = "One CloudWatch log group per Tomcat server"
+  value       = module.cloudwatch_agent.log_group_names
+}
