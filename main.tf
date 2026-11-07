@@ -71,3 +71,11 @@ module "monitoring" {
   alert_email             = var.alert_email
   cpu_threshold           = var.cpu_alarm_threshold
 }
+
+module "cloudwatch_agent" {
+  source = "./modules/cloudwatch_agent"
+
+  name               = var.project_name
+  instance_ids       = module.tomcat.instance_ids
+  instance_role_name = module.tomcat.instance_role_name
+}

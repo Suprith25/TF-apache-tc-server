@@ -30,3 +30,7 @@ Free-tier notes: CodeBuild gives 100 build-min/month (a run takes roughly 6-10 m
 CloudWatch dashboard `tomcat-demo-servers` (CPU, network, disk, status checks per server + ALB health/requests/5xx/latency) and one CPU alarm per server (> 90% for 2 x 5 min) that emails via SNS.
 
 `terraform apply` (alerts go to the `alert_email` variable, default `bjsuprith@gmail.com`), then click **Confirm subscription** in the email AWS sends. Dashboard link: `dashboard_url` output.
+
+## Tomcat logs in CloudWatch (branch `cloudwatch-agent-installation`)
+
+The CloudWatch agent is installed on each server through SSM (no server rebuild) and ships `/opt/tomcat/logs/*` (catalina.out, catalina, localhost, access, manager, host-manager) to `tomcat1loggroup`, `tomcat2loggroup`, `tomcat3loggroup`. Logs are kept 7 days. View: Console > CloudWatch > Logs > Log groups.
