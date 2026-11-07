@@ -266,7 +266,7 @@ resource "aws_codedeploy_deployment_group" "this" {
   app_name               = aws_codedeploy_app.this.name
   deployment_group_name  = "${var.name}-tomcat"
   service_role_arn       = aws_iam_role.codedeploy.arn
-  deployment_config_name = "CodeDeployDefault.OneAtATime"
+  deployment_config_name = "CodeDeployDefault.AllAtOnce" # all 3 servers in parallel
 
   ec2_tag_set {
     ec2_tag_filter {
@@ -277,15 +277,10 @@ resource "aws_codedeploy_deployment_group" "this" {
   }
 
   deployment_style {
-    deployment_option = "WITH_TRAFFIC_CONTROL"
+    deployment_option = "WITHOUT_TRAFFIC_CONTROL" # no ALB drain/register waits
     deployment_type   = "IN_PLACE"
   }
 
-  load_balancer_info {
-    target_group_info {
-      name = var.target_group_name
-    }
-  }
 
   auto_rollback_configuration {
     enabled = true

@@ -19,7 +19,6 @@ variable "codedeploy_tag_value" {
   type        = string
   description = "Value of the CodeDeployGroup tag on the target EC2 instances"
 }
-variable "target_group_name" { type = string }
 variable "app_url" {
   type        = string
   description = "Public base URL (ALB) used by the test stage"

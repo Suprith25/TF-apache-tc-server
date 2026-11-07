@@ -57,6 +57,5 @@ module "cicd" {
   war_name      = var.war_name
 
   codedeploy_tag_value = var.project_name # matches the CodeDeployGroup tag on the instances
-  target_group_name    = module.alb.target_group_name
   app_url              = "http://${module.alb.alb_dns_name}"
 }
