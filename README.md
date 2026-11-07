@@ -1,27 +1,37 @@
-# Tomcat on EC2 (Terraform demo)
+# 🐱☁️ Tomcat on AWS with Terraform and a full CI/CD pipeline
 
-VPC module (VPC, 3 public subnets, IGW, route table) + tomcat module (3 free-tier EC2 instances running Apache Tomcat on :8080). State lives in S3 with native locking (`use_lockfile`, Terraform >= 1.10, no DynamoDB).
+🎓 A teaching project. With Terraform you build, on AWS:
 
-## Steps
-1. Create the state bucket (once):
-   `cd bootstrap && terraform init && terraform apply -var bucket_name=<unique-name>`
-2. Put that name in `versions.tf` (`backend "s3"` -> `bucket`).
-3. `terraform init && terraform apply`
-4. Open the `tomcat_urls` outputs (give it ~2-3 min after apply for install). `/hello.html` shows the server name.
-5. Teardown: `terraform destroy`, then destroy `bootstrap` (empty the bucket first).
+1. 🌐 A **network** (VPC, subnets, route table)
+2. 🖥️ **Three Apache Tomcat servers** (EC2) behind an **Application Load Balancer** ⚖️
+3. 🚀 A **CI/CD pipeline** (AWS CodePipeline) that, every time you push to GitHub, **scans, builds, versions, stores and deploys** a Java WAR file to the three servers, then **tests** it
 
-Notes: `t3.micro` is free tier on newer accounts; use `-var instance_type=t2.micro` on older ones. SG opens 22/8080 to the world — demo only.
+🗄️ Terraform state is kept in **S3** with **native locking** 🔒 (no DynamoDB needed). Everything runs on AWS ☁️, so nothing is built on your laptop 💻❌.
 
-## CI/CD with AWS CodePipeline (branch `code-pipeline`)
+> 📌 This README is for branch `code-pipeline`. Other branches add more (see [Branches](#-branches)).
 
-Source (GitHub: `Suprith25/Java-mini-project`) -> CodeScan (Semgrep SAST + Trivy deps/secrets) -> Build (Maven test + package, auto-version) -> Publish (versioned WAR to CodeArtifact) -> Deploy (CodeDeploy to all 3 Tomcats in parallel) -> Test (smoke test via ALB checks the new version).
+---
 
-Everything runs on AWS. A `git push` to the repo's `main` branch triggers the pipeline automatically. Nothing is built locally.
+## 🗺️ 1. The big picture
 
-1. `terraform apply`
-2. Console > Developer Tools > Settings > Connections: open the `github_connection_arn` connection and click **Update pending connection** (one-time).
-3. Push a change to the Java repo; watch CodePipeline. App: `app_url` output (`/sample/`, `/sample/hello`, `/sample/version.txt`).
-4. Versions: WAR = `app_major_minor` + build number (e.g. 1.0.7), stored in CodeArtifact as `sample-1.0.7.war`.
+```
+                         git push
+   👩‍💻 Developer ─────────────────────────►  🐙 GitHub  (Java project: Suprith25/Java-mini-project)
+                                              │ push event (GitHub App)
+                                              ▼
+ ┌──────────────────────────────  AWS CodePipeline 🚀 ───────────────────────────────┐
+ │                                                                                 │
+ │  Source ─► CodeScan ─► Build ─► Publish ─► Deploy ─► Test                       │
+ │  clone     Semgrep     Maven    store WAR   CodeDeploy  smoke test              │
+ │            + Trivy     + auto   in          to 3 servers through the ALB        │
+ │                        version  CodeArtifact                                    │
+ └─────────────────────────────────────────────────────────────────────────────────┘
+                                              │ deploys WAR
+                                              ▼
+  🌍 Internet ──► ⚖️ ALB :80 ──► 🐱 Tomcat server 1 ┐
+                       ├─► 🐱 Tomcat server 2 ├  (EC2 in 3 public subnets, 3 Availability Zones)
+                       └─► 🐱 Tomcat server 3 ┘          all inside one VPC
+```
 
 Free-tier notes: CodeBuild gives 100 build-min/month (a run takes roughly 6-10 min), 1 CodePipeline V1 pipeline, CodeDeploy on EC2 and CodeArtifact (2 GB) are free. The ALB, public IPv4 addresses and running 3 instances 24/7 are NOT fully free: `terraform destroy` after class.
 

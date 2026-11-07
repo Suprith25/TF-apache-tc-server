@@ -1,4 +1,6 @@
 #!/bin/bash
+# before_install.sh - runs BEFORE the new WAR is copied: delete the old WAR and its unpacked folder for a clean redeploy.
+
 set -e
 # remove the previous deployment so Tomcat redeploys cleanly
 rm -rf /opt/tomcat/webapps/${war_name} /opt/tomcat/webapps/${war_name}.war

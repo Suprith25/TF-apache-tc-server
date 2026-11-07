@@ -1,10 +1,20 @@
+# scan.yml - CodeBuild "buildspec" for the CODESCAN stage (security checks)
+#
+# A buildspec is the list of shell commands CodeBuild runs, grouped in phases:
+# install -> pre_build -> build -> post_build. If any command exits non-zero the
+# stage fails and the pipeline stops, so vulnerable code never reaches the servers.
+# Two scanners run: Semgrep (looks at YOUR code) and Trivy (looks at dependencies).
+
 version: 0.2
 phases:
   install:
     runtime-versions:
       python: 3.12
     commands:
+      # Install Semgrep, a static analysis tool (SAST) that finds insecure code patterns.
       - pip install --quiet semgrep
+      # Install Trivy (vulnerability scanner) from a pinned release, and verify its SHA-256 checksum
+      # before running it. Pinning a version makes builds repeatable.
       - |
         TV=0.76.2
         BASE=https://github.com/aquasecurity/trivy/releases/download/v$TV
@@ -16,7 +26,8 @@ phases:
         trivy --version
   build:
     commands:
-      # SAST: static analysis of the Java source (fails on ERROR severity findings)
+      # SAST: Java rule pack + hardcoded-secret rules. --error makes the stage fail on findings.
       - semgrep scan --config p/java --config p/secrets --severity ERROR --error --metrics=off .
-      # SCA + secret scan: vulnerable dependencies in pom.xml, hardcoded secrets
+      # SCA: scan the repo's dependency files (pom.xml) for known CVEs, and look for leaked secrets.
+      # TRIVY_SEVERITY / TRIVY_EXIT_CODE are set by Terraform (see modules/cicd/variables.tf).
       - trivy fs --scanners vuln,secret --severity "$TRIVY_SEVERITY" --exit-code "$TRIVY_EXIT_CODE" .

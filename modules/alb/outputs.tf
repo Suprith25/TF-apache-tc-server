@@ -1,3 +1,5 @@
+# ⚖️ modules/alb/outputs.tf - DNS name (the public URL), security group id and target group name
+
 output "alb_dns_name" {
   value = aws_lb.this.dns_name
 }

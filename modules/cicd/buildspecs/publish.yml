@@ -1,3 +1,9 @@
+# publish.yml - CodeBuild buildspec for the PUBLISH stage
+#
+# Uploads the exact WAR produced by the Build stage into CodeArtifact (the artifact
+# manager), tagged with its version. Keeping every version means you can roll back
+# by re-deploying an older one. If this stage fails, Deploy never runs.
+
 version: 0.2
 phases:
   build:
@@ -5,7 +11,9 @@ phases:
       # input artifact = Build stage output: <war>.war + VERSION (the exact WAR that will be deployed)
       - export VERSION=$(cat VERSION)
       - echo "Publishing $WAR_NAME $VERSION to CodeArtifact repo $CA_REPO"
+      # CodeArtifact verifies the upload against this checksum (integrity check).
       - SHA=$(sha256sum "$WAR_NAME.war" | cut -d' ' -f1)
+      # Publish as a "generic" package: name = WAR name, version = build version, asset = the .war file.
       - |
         aws codeartifact publish-package-version \
           --domain "$CA_DOMAIN" --domain-owner "$ACCOUNT_ID" --repository "$CA_REPO" \

@@ -1,8 +1,16 @@
+# test.yml - CodeBuild buildspec for the TEST stage (smoke test)
+#
+# Runs AFTER Deploy. It calls the live application through the load balancer and
+# proves that (a) the NEW version is the one answering and (b) the pages work.
+# A "smoke test" is a quick sanity check, not a full test suite.
+
 version: 0.2
 phases:
   build:
     commands:
       - echo "Smoke test against $APP_URL/$WAR_NAME expecting version $EXPECTED_VERSION"
+      # Poll /version.txt up to 30 times (10 s apart) until it equals the version just built.
+      # Retrying matters because Tomcat needs a few seconds to unpack the new WAR.
       - |
         for i in $(seq 1 30); do
           BODY=$(curl -s --max-time 5 "$APP_URL/$WAR_NAME/version.txt" || true)
@@ -14,5 +22,6 @@ phases:
           if [ "$i" = "30" ]; then echo "TEST FAILED: version $EXPECTED_VERSION not served" >&2; exit 1; fi
           sleep 10
         done
+      # Functional checks: the servlet and the home page return the expected text.
       - curl -sf "$APP_URL/$WAR_NAME/hello" | grep -q "Hello" && echo "servlet /hello OK"
       - curl -sf "$APP_URL/$WAR_NAME/" | grep -q "Welcome" && echo "home page OK"

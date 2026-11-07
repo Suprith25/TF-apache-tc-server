@@ -1,18 +1,28 @@
+# build.yml - CodeBuild buildspec for the BUILD stage
+#
+# Does four things: (1) work out a new version, (2) compile + test with Maven,
+# (3) package the WAR, (4) assemble the bundle CodeDeploy will install.
+# Maven downloads libraries through CodeArtifact (see settings.xml below).
+
 version: 0.2
 env:
+  # Makes VERSION visible to later pipeline stages (the Test stage compares against it).
   exported-variables:
     - VERSION
 phases:
   install:
     runtime-versions:
+      # Java 21 JDK (the app's pom targets Java 21).
       java: corretto21
   pre_build:
     commands:
-      # Auto-version: MAJOR.MINOR (terraform variable) + CodeBuild build number
+      # AUTOMATIC VERSIONING: every run gets a unique number, e.g. 1.0.1, 1.0.2 ...
       - export VERSION="${MAJOR_MINOR}.${CODEBUILD_BUILD_NUMBER}"
       - echo "Building version $VERSION"
+      # Get a short-lived password for CodeArtifact, plus the repository's Maven URL.
       - export CA_TOKEN=$(aws codeartifact get-authorization-token --domain "$CA_DOMAIN" --domain-owner "$ACCOUNT_ID" --query authorizationToken --output text)
       - export CA_URL=$(aws codeartifact get-repository-endpoint --domain "$CA_DOMAIN" --domain-owner "$ACCOUNT_ID" --repository "$CA_REPO" --format maven --query repositoryEndpoint --output text)
+      # Write a Maven settings.xml that points Maven at CodeArtifact (mirror + credentials).
       - |
         cat > settings.xml <<XML
         <settings>
@@ -36,20 +46,24 @@ phases:
       # stamp the version into the WAR (served at /<app>/version.txt) and into the pom
       - mkdir -p "$APP_DIR/src/main/webapp"
       - echo "$VERSION" > "$APP_DIR/src/main/webapp/version.txt"
+      # Rewrite the version inside pom.xml (in the build workspace only, not in GitHub).
       - mvn -B -s settings.xml -f "$APP_DIR/pom.xml" versions:set -DnewVersion="$VERSION" -DgenerateBackupPoms=false
   build:
     commands:
+      # "verify" runs compile, tests and packaging. A failing test stops the pipeline.
       # compile + run unit tests (if any) + package the WAR
       - mvn -B -s settings.xml -f "$APP_DIR/pom.xml" clean verify
   post_build:
     commands:
       # assemble the CodeDeploy bundle: WAR + appspec + hook scripts (kept in the infra repo)
+      # Collect the deployable files in dist/: the WAR, appspec.yml, hook scripts and a VERSION file.
       - mkdir -p dist
       - cp "$APP_DIR/target/$WAR_NAME.war" dist/
       - aws s3 cp "s3://$ASSET_BUCKET/deploy-assets/" dist/ --recursive
       - chmod +x dist/scripts/*.sh
       - echo "$VERSION" > dist/VERSION
 artifacts:
+  # The "artifact" passed to the next stages is the content of dist/.
   base-directory: dist
   files:
     - '**/*'

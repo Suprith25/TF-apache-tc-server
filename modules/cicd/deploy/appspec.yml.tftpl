@@ -1,9 +1,19 @@
+# appspec.yml - the CodeDeploy instruction file
+#
+# Tells the CodeDeploy agent on each server (1) which file to copy where and
+# (2) which scripts to run at each lifecycle step. Order of a deployment:
+#   BeforeInstall -> copy files -> AfterInstall -> ValidateService
+# Terraform fills in the WAR name when it uploads this file to S3.
+
 version: 0.0
 os: linux
+# Copy the WAR into Tomcat's webapps folder; Tomcat then auto-deploys it.
 files:
   - source: ${war_name}.war
     destination: /opt/tomcat/webapps
+# Replace the old WAR if it exists.
 file_exists_behavior: OVERWRITE
+# Scripts run as root; a non-zero exit (or timeout) fails the deployment and triggers rollback.
 hooks:
   BeforeInstall:
     - location: scripts/before_install.sh
