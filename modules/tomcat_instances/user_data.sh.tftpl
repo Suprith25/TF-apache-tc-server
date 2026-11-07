@@ -1,7 +1,7 @@
 #!/bin/bash
 set -euxo pipefail
 
-dnf install -y java-17-amazon-corretto-headless tar gzip
+dnf install -y java-21-amazon-corretto-headless tar gzip ruby wget
 
 useradd -r -m -d /opt/tomcat -s /sbin/nologin tomcat || true
 curl -fsSL "https://archive.apache.org/dist/tomcat/tomcat-10/v${tomcat_version}/bin/apache-tomcat-${tomcat_version}.tar.gz" -o /tmp/tomcat.tgz
@@ -20,7 +20,7 @@ After=network.target
 Type=forking
 User=tomcat
 Group=tomcat
-Environment=JAVA_HOME=/usr/lib/jvm/jre-17
+Environment=JAVA_HOME=/usr/lib/jvm/jre-21
 Environment=CATALINA_HOME=/opt/tomcat
 Environment=CATALINA_PID=/opt/tomcat/temp/tomcat.pid
 ExecStart=/opt/tomcat/bin/startup.sh
@@ -33,3 +33,10 @@ UNIT
 
 systemctl daemon-reload
 systemctl enable --now tomcat
+
+# CodeDeploy agent (lets CodePipeline deploy WARs to this server)
+cd /tmp
+wget -q "https://aws-codedeploy-${region}.s3.${region}.amazonaws.com/latest/install"
+chmod +x ./install
+./install auto
+systemctl enable --now codedeploy-agent

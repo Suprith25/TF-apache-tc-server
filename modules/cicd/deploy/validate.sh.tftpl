@@ -1,0 +1,8 @@
+#!/bin/bash
+# Tomcat auto-deploys the WAR; wait until the app answers.
+for i in $(seq 1 30); do
+  if curl -sf http://localhost:8080/${war_name}/version.txt; then exit 0; fi
+  sleep 3
+done
+echo "App did not come up" >&2
+exit 1

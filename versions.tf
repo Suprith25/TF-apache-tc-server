@@ -12,7 +12,7 @@ terraform {
   # Replace the bucket name with the one you created in ./bootstrap
   backend "s3" {
     bucket       = "tfprojecttcbucket"
-    profile = "jenkins-infra"
+    profile      = "jenkins-infra"
     key          = "tomcat-demo/terraform.tfstate"
     region       = "ap-south-1"
     encrypt      = true

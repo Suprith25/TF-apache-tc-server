@@ -13,3 +13,6 @@ variable "tomcat_version" {
   type    = string
   default = "10.1.34"
 }
+variable "region" { type = string }
+variable "artifact_bucket_name" { type = string }
+variable "artifact_prefix" { type = string }

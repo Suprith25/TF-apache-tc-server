@@ -28,3 +28,36 @@ variable "tomcat_version" {
   type    = string
   default = "10.1.34"
 }
+
+variable "github_repo" {
+  type        = string
+  default     = "Suprith25/Java-mini-project"
+  description = "Java project to build, as owner/repo"
+}
+
+variable "app_dir" {
+  type    = string
+  default = "sample-app" # folder in the repo containing pom.xml
+}
+
+variable "war_name" {
+  type    = string
+  default = "sample" # <finalName> in the pom; also the Tomcat context path
+}
+
+variable "github_branch" {
+  type    = string
+  default = "main"
+}
+
+variable "app_major_minor" {
+  type        = string
+  default     = "1.0"
+  description = "WAR version = <this>.<CodeBuild build number>. Bump to 1.1, 2.0 ... for releases"
+}
+
+variable "artifact_bucket_name" {
+  type        = string
+  default     = "tfprojecttcbucket" # same bucket that holds the Terraform state
+  description = "Existing S3 bucket used for CodePipeline artifacts and deploy files"
+}

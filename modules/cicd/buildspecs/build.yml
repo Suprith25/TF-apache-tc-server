@@ -1,0 +1,55 @@
+version: 0.2
+env:
+  exported-variables:
+    - VERSION
+phases:
+  install:
+    runtime-versions:
+      java: corretto21
+  pre_build:
+    commands:
+      # Auto-version: MAJOR.MINOR (terraform variable) + CodeBuild build number
+      - export VERSION="${MAJOR_MINOR}.${CODEBUILD_BUILD_NUMBER}"
+      - echo "Building version $VERSION"
+      - export CA_TOKEN=$(aws codeartifact get-authorization-token --domain "$CA_DOMAIN" --domain-owner "$ACCOUNT_ID" --query authorizationToken --output text)
+      - export CA_URL=$(aws codeartifact get-repository-endpoint --domain "$CA_DOMAIN" --domain-owner "$ACCOUNT_ID" --repository "$CA_REPO" --format maven --query repositoryEndpoint --output text)
+      - |
+        cat > settings.xml <<XML
+        <settings>
+          <servers>
+            <server>
+              <id>codeartifact</id>
+              <username>aws</username>
+              <password>${CA_TOKEN}</password>
+            </server>
+          </servers>
+          <mirrors>
+            <mirror>
+              <id>codeartifact</id>
+              <name>CodeArtifact</name>
+              <url>${CA_URL}</url>
+              <mirrorOf>*</mirrorOf>
+            </mirror>
+          </mirrors>
+        </settings>
+        XML
+      # stamp the version into the WAR (served at /<app>/version.txt) and into the pom
+      - mkdir -p "$APP_DIR/src/main/webapp"
+      - echo "$VERSION" > "$APP_DIR/src/main/webapp/version.txt"
+      - mvn -B -s settings.xml -f "$APP_DIR/pom.xml" versions:set -DnewVersion="$VERSION" -DgenerateBackupPoms=false
+  build:
+    commands:
+      # compile + run unit tests (if any) + package the WAR
+      - mvn -B -s settings.xml -f "$APP_DIR/pom.xml" clean verify
+  post_build:
+    commands:
+      # assemble the CodeDeploy bundle: WAR + appspec + hook scripts (kept in the infra repo)
+      - mkdir -p dist
+      - cp "$APP_DIR/target/$WAR_NAME.war" dist/
+      - aws s3 cp "s3://$ASSET_BUCKET/deploy-assets/" dist/ --recursive
+      - chmod +x dist/scripts/*.sh
+      - echo "$VERSION" > dist/VERSION
+artifacts:
+  base-directory: dist
+  files:
+    - '**/*'

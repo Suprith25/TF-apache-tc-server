@@ -1,0 +1,16 @@
+version: 0.2
+phases:
+  build:
+    commands:
+      # input artifact = Build stage output: <war>.war + VERSION (the exact WAR that will be deployed)
+      - export VERSION=$(cat VERSION)
+      - echo "Publishing $WAR_NAME $VERSION to CodeArtifact repo $CA_REPO"
+      - SHA=$(sha256sum "$WAR_NAME.war" | cut -d' ' -f1)
+      - |
+        aws codeartifact publish-package-version \
+          --domain "$CA_DOMAIN" --domain-owner "$ACCOUNT_ID" --repository "$CA_REPO" \
+          --format generic --namespace "$WAR_NAME" --package "$WAR_NAME" \
+          --package-version "$VERSION" \
+          --asset-content "$WAR_NAME.war" --asset-name "$WAR_NAME-$VERSION.war" \
+          --asset-sha256 "$SHA"
+      - echo "Published $WAR_NAME-$VERSION.war"

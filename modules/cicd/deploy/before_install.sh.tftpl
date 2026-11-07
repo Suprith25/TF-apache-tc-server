@@ -1,0 +1,4 @@
+#!/bin/bash
+set -e
+# remove the previous deployment so Tomcat redeploys cleanly
+rm -rf /opt/tomcat/webapps/${war_name} /opt/tomcat/webapps/${war_name}.war

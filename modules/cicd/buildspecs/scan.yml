@@ -1,0 +1,22 @@
+version: 0.2
+phases:
+  install:
+    runtime-versions:
+      python: 3.12
+    commands:
+      - pip install --quiet semgrep
+      - |
+        TV=0.76.2
+        BASE=https://github.com/aquasecurity/trivy/releases/download/v$TV
+        curl -fsSL -o trivy.tgz "$BASE/trivy_${TV}_Linux-64bit.tar.gz"
+        curl -fsSL -o trivy_checksums.txt "$BASE/trivy_${TV}_checksums.txt"
+        grep "trivy_${TV}_Linux-64bit.tar.gz" trivy_checksums.txt | sha256sum -c -
+        tar -xzf trivy.tgz trivy
+        mv trivy /usr/local/bin/trivy
+        trivy --version
+  build:
+    commands:
+      # SAST: static analysis of the Java source (fails on ERROR severity findings)
+      - semgrep scan --config p/java --config p/secrets --severity ERROR --error --metrics=off .
+      # SCA + secret scan: vulnerable dependencies in pom.xml, hardcoded secrets
+      - trivy fs --scanners vuln,secret --severity "$TRIVY_SEVERITY" --exit-code "$TRIVY_EXIT_CODE" .
